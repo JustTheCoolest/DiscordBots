@@ -1,7 +1,7 @@
 # Discord Bots
 These are a few Discord bots that I created
 
-# Amomg Us Bot
+# Among Us Bot
 To call your friends for a game of among us Anytime you want!
 
 Features:

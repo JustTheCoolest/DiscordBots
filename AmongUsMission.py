@@ -18,12 +18,12 @@ async def on_ready():
 
 @bot.command()
 async def Au(ctx, arg):
-    channel = bot.get_channel(675194619616690179)
+    channel = bot.get_channel(751460282118963201)
     try:
         Line = arg
         Room_ID, Server = Line.split(":")
         await ctx.send("{} invite created successfully".format(ctx.message.author.mention))
-        await channel.send("<@&742616464321937408> Your friend has invited you for a game of Among Us! Join soon!")
+        await channel.send("<@&757163360541474818> Your friend has invited you for a game of Among Us! Join soon!")
         await channel.send("Room ID: " + Room_ID)
         await channel.send("Server: " + Server)
 
@@ -53,9 +53,9 @@ async def Au(ctx, arg):
 @bot.command()
 async def Pu(ctx, arg):
     if arg == "call":
-        channel = bot.get_channel(675194619616690179)
+        channel = bot.get_channel(751460282118963201)
         await ctx.send("{} Sure, just u wait".format(ctx.message.author.mention))
-        await channel.send("<@&742616464321937408> Your friend has invited you for a game of Among Us! Make sure to join!")
+        await channel.send("<@&757163360541474818> Your friend has invited you for a game of Among Us! Make sure to join!")
 
 
         # Get the message and the reaction
@@ -86,4 +86,4 @@ async def cmd(ctx):
                     "Then, you could start. Crewmates(or imposters) are supposed to join by reacting to the bot's message".format(ctx.message.author.mention))
 
 
-bot.run('TOKEN')
+bot.run('NzYyNjUwODc5NjUxNDc5NTYz.X3sP-w.T_SjWmlyHLhZnHDSV46dI1I2JcA')

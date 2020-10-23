@@ -78,4 +78,4 @@ async def on_message(message):
         await message.channel.send("What's the hurry? No test is scheduled. Please don't be a padipaali. Have patience")
 
 
-client.run('TOKEN')
+client.run('NzYyNjQxODAxODc3MjU4Mjgy.X3sHhg.o4AY2BUiaA53mJgj-Nq8Pv_L-AA')
