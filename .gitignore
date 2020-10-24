@@ -1,3 +1,6 @@
 BotToken.txt
+venv
+.idea
+.gitignores
 RunningBots.py
 StudyBotTest.py
