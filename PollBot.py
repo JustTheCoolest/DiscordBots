@@ -52,4 +52,4 @@ async def start(ctx):
 
 
 
-bot.run('NzcwODk1MjI5NDg1MTg3MDgz.X5kOIQ.y0eIGVkZuCViyBJildCD8HoxPwo')
+bot.run('TOKEN')
