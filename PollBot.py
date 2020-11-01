@@ -6,6 +6,7 @@ bot = commands.Bot(command_prefix=PREFIX)
 client = discord.Client()
 
 Options = []
+Msg = []
 
 @bot.event
 async def on_ready():
@@ -23,6 +24,7 @@ async def cmd(ctx):
 async def create(ctx, *args):
     global poll
     poll = "POLL: " + ' '.join(args)
+    Options.clear()
     await ctx.send("Done")
 
 @bot.command()
@@ -34,6 +36,7 @@ async def add(ctx, *args):
 
 @bot.command()
 async def start(ctx):
+    global msg_sent, call_msg, react_msg
     Reactions = 0
     Reaction_list = ["1️⃣", "2️⃣", "3️⃣", "4️⃣", "5️⃣", "6️⃣", "7️⃣", "8️⃣", "9️⃣", "🔟"]
 
@@ -49,12 +52,13 @@ async def start(ctx):
 
     PollChannel = bot.get_channel(channel_id)
     try:
-        await PollChannel.send(Role_id + " " + poll)
+        call_msg = await PollChannel.send(Role_id + " " + poll)
         for i in range(int(len(Options))):
             Reactions += 1
-            await PollChannel.send(str(i + 1) + ". " + Options[i])
+            msg_sent = await PollChannel.send(str(i + 1) + ". " + Options[i])
+            Msg.append(msg_sent)
             
-        msg = await PollChannel.send("React to the message according to the number to cast your poll")
+        react_msg = msg = await PollChannel.send("React to the message according to the number to cast your poll")
 
         for j in range(Reactions):
             await msg.add_reaction(Reaction_list[j])
@@ -62,6 +66,16 @@ async def start(ctx):
     except NameError:
         await ctx.send("Please create the poll first")
 
+
+@bot.command()
+async def delete(ctx):
+    await call_msg.delete()
+    for d in range(int(len(Msg))):
+        delete_msg = await ctx.fetch_message(Msg[d].id)
+        await delete_msg.delete()
+    await react_msg.delete()
+    await ctx.send("Done")
+        # print(delete_msg)
 
 
 
@@ -83,4 +97,4 @@ async def reason(ctx, arg1, arg2):
 
 
 
-bot.run('TOKEN')
+bot.run('NzcwODk1MjI5NDg1MTg3MDgz.X5kOIQ.hXEXmyIsLk9AHHIcv_XCsZNPaHs')
