@@ -97,4 +97,4 @@ async def reason(ctx, arg1, arg2):
 
 
 
-bot.run('NzcwODk1MjI5NDg1MTg3MDgz.X5kOIQ.hXEXmyIsLk9AHHIcv_XCsZNPaHs')
+bot.run('token')
