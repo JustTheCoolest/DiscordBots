@@ -1,4 +1,5 @@
 import discord
+import os
 from discord.ext import commands
 
 PREFIX = "poll."
@@ -7,6 +8,7 @@ client = discord.Client()
 
 Options = []
 Msg = []
+Urgent_message = []
 
 @bot.event
 async def on_ready():
@@ -36,7 +38,7 @@ async def add(ctx, *args):
 
 @bot.command()
 async def start(ctx):
-    global msg_sent, call_msg, react_msg
+    global msg_sent, call_msg, react_msg, Reaction_list
     Reactions = 0
     Reaction_list = ["1️⃣", "2️⃣", "3️⃣", "4️⃣", "5️⃣", "6️⃣", "7️⃣", "8️⃣", "9️⃣", "🔟"]
 
@@ -58,25 +60,98 @@ async def start(ctx):
             msg_sent = await PollChannel.send(str(i + 1) + ". " + Options[i])
             Msg.append(msg_sent)
             
-        react_msg = msg = await PollChannel.send("React to the message according to the number to cast your poll")
+        react_msg = await PollChannel.send("React to the message according to the number to cast your poll")
 
         for j in range(Reactions):
-            await msg.add_reaction(Reaction_list[j])
+            await react_msg.add_reaction(Reaction_list[j])
 
     except NameError:
         await ctx.send("Please create the poll first")
 
 
 @bot.command()
-async def delete(ctx):
-    await call_msg.delete()
-    for d in range(int(len(Msg))):
-        delete_msg = await ctx.fetch_message(Msg[d].id)
-        await delete_msg.delete()
-    await react_msg.delete()
-    await ctx.send("Done")
-        # print(delete_msg)
+async def urgent(ctx, *args):
+    global urg_call_msg, urg_option_msg, urg_msg, urg_count
+    if os.path.exists("MessageID.txt"):
+        msg_file = open("MessageID.txt", "w")
+    else:
+        msg_file = open("MessageID.txt", "w+")
+    Line = ' '.join(args)
+    urg_reactions = 0
+    urg_reaction_list = ["1️⃣", "2️⃣", "3️⃣", "4️⃣", "5️⃣", "6️⃣", "7️⃣", "8️⃣", "9️⃣", "🔟"]
+    urg_poll, *urg_options = Line.split("&")
+    urg_call_msg = await ctx.send("Urgent poll: " + str(urg_poll))
 
+    for i in range(len(urg_options)):
+        urg_reactions += 1
+        urg_option_msg = await ctx.send("Urgent Option " + str(i + 1) + ": " + str(urg_options[i]))
+        Urgent_message.append(urg_option_msg)
+
+    urg_msg = await ctx.send("Please react to the message to according to the option number to cast your poll. (Its urgent it seems)")
+    # print("Message ID: " + str(urg_msg.id))
+    msg_file.write(str(urg_msg.id))
+
+    urg_count = 0
+    for j in range(urg_reactions):
+        await urg_msg.add_reaction(urg_reaction_list[j])
+        urg_count += 1
+
+
+
+@bot.command()
+async def delete(ctx):
+    try:
+        await call_msg.delete()
+        for d in range(int(len(Msg))):
+            delete_msg = await ctx.fetch_message(Msg[d].id)
+            await delete_msg.delete()
+        await react_msg.delete()
+        await ctx.send("Done")
+    except NameError:
+        await urg_call_msg.delete()
+        for d in range(int(len(Urgent_message))):
+            delete_msg = await ctx.fetch_message(Urgent_message[d].id)
+            await delete_msg.delete()
+        await urg_msg.delete()
+        await ctx.send("Done")
+
+
+
+@bot.command()
+async def result(ctx, arg):
+    try:
+        poll_file = open('MessageID.txt', 'r+')
+        poll_id = poll_file.readline()
+        if arg in str(poll_id):
+            poll_msg = await ctx.fetch_message(arg)
+
+            emojis = {}
+            for i in poll_msg.reactions:
+                emojis[f'{i}'] = i.count
+            emojis = {k: v for k, v in sorted(emojis.items(), key=lambda x: x[1], reverse=True)}
+
+            key = list(emojis.keys())[0]
+
+            values = []
+            count = 0
+
+            for i in emojis.values():
+                if emojis[key] == i:
+                    values.append(list(emojis.keys())[count])
+                count += 1
+
+            if len(values) == 1:
+                await ctx.send(f'{key} has the highest reactions: {emojis[key]}')
+            else:
+                await ctx.send(str(values) + " are tied")
+
+            reaction_count = sum([i.count for i in poll_msg.reactions])
+            await ctx.send("Total number of reactions: " + str(reaction_count - urg_count))
+            
+        else:
+            await ctx.send("Please choose a valid poll")
+    except FileNotFoundError:
+        await ctx.send("Please create the poll first")
 
 
 @bot.command()
@@ -97,4 +172,4 @@ async def reason(ctx, arg1, arg2):
 
 
 
-bot.run('token')
+bot.run('TOKEN')
