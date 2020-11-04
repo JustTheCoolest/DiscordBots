@@ -209,4 +209,4 @@ async def reason(ctx, arg1, arg2):
         await ctx.send("According to Rule: 1, adding members who do not belong here is crime! " + statement)
 
 
-bot.run('NzcwODk1MjI5NDg1MTg3MDgz.X5kOIQ.CFttl7NlhhdzCu2kOkBlARjKoV0')
+bot.run('TOKEN')
