@@ -1,5 +1,7 @@
 import discord
 import os
+import random
+import string
 from discord.ext import commands
 
 PREFIX = "poll."
@@ -10,17 +12,25 @@ Options = []
 Msg = []
 Urgent_message = []
 
+
 @bot.event
 async def on_ready():
     activity = discord.Game(name="Make a Poll", type=3)
     await bot.change_presence(status=discord.Status.idle, activity=activity)
     return
 
+
 '''
 @bot.command()
 async def cmd(ctx):
     await ctx.send("HOW TO START A POLL:")
 '''
+
+
+@bot.command()
+async def hello(ctx):
+    await ctx.send("`Is my name a joke to you?`")
+
 
 @bot.command()
 async def create(ctx, *args):
@@ -29,18 +39,24 @@ async def create(ctx, *args):
     Options.clear()
     await ctx.send("Done")
 
+
 @bot.command()
 async def add(ctx, *args):
     arg = ' '.join(args)
     Options.append(arg)
     await ctx.send("Done")
-    
+
 
 @bot.command()
 async def start(ctx):
     global msg_sent, call_msg, react_msg, Reaction_list
     Reactions = 0
     Reaction_list = ["1️⃣", "2️⃣", "3️⃣", "4️⃣", "5️⃣", "6️⃣", "7️⃣", "8️⃣", "9️⃣", "🔟"]
+
+    if os.path.exists("MessageID.txt"):
+        msg_file = open("MessageID.txt", "w")
+    else:
+        msg_file = open("MessageID.txt", "w+")
 
     if ctx.guild.name == "Let's Rock!":
         channel_id = 770898839473094687
@@ -59,11 +75,13 @@ async def start(ctx):
             Reactions += 1
             msg_sent = await PollChannel.send(str(i + 1) + ". " + Options[i])
             Msg.append(msg_sent)
-            
+
         react_msg = await PollChannel.send("React to the message according to the number to cast your poll")
 
         for j in range(Reactions):
             await react_msg.add_reaction(Reaction_list[j])
+
+        msg_file.write(str(react_msg.id))
 
     except NameError:
         await ctx.send("Please create the poll first")
@@ -73,7 +91,7 @@ async def start(ctx):
 async def urgent(ctx, *args):
     global urg_call_msg, urg_option_msg, urg_msg, urg_count
     if os.path.exists("MessageID.txt"):
-        msg_file = open("MessageID.txt", "w")
+        msg_file = open("MessageID.txt", "a")
     else:
         msg_file = open("MessageID.txt", "w+")
     Line = ' '.join(args)
@@ -87,15 +105,20 @@ async def urgent(ctx, *args):
         urg_option_msg = await ctx.send("Urgent Option " + str(i + 1) + ": " + str(urg_options[i]))
         Urgent_message.append(urg_option_msg)
 
-    urg_msg = await ctx.send("Please react to the message to according to the option number to cast your poll. (Its urgent it seems)")
-    # print("Message ID: " + str(urg_msg.id))
-    msg_file.write(str(urg_msg.id))
+    urg_msg = await ctx.send(
+        "Please react to the message to according to the option number to cast your poll. (Its urgent it seems)")
+
+    y = ''
+    for i in range(1, 3):
+        x = random.choice(string.ascii_letters)
+        y += x
+
+    msg_file.write(y + ":" + str(urg_msg.id) + "\n")
 
     urg_count = 0
     for j in range(urg_reactions):
         await urg_msg.add_reaction(urg_reaction_list[j])
         urg_count += 1
-
 
 
 @bot.command()
@@ -116,47 +139,62 @@ async def delete(ctx):
         await ctx.send("Done")
 
 
-
 @bot.command()
 async def result(ctx, arg):
     try:
-        poll_file = open('MessageID.txt', 'r+')
-        poll_id = poll_file.readline()
-        if arg in str(poll_id):
-            poll_msg = await ctx.fetch_message(arg)
+        d = {}
+        with open('MessageID.txt') as poll_file:
+            for line in poll_file:
+                (key, value) = line.rstrip("\n").split(":")
+                d[key] = value
 
-            emojis = {}
-            for i in poll_msg.reactions:
-                emojis[f'{i}'] = i.count
-            emojis = {k: v for k, v in sorted(emojis.items(), key=lambda x: x[1], reverse=True)}
+            print(d.keys())
 
-            key = list(emojis.keys())[0]
+            if str(arg) in d.keys():
+                poll_id = d[str(arg)]
+                poll_msg = await ctx.fetch_message(poll_id)
 
-            values = []
-            count = 0
+                emojis = {}
+                for i in poll_msg.reactions:
+                    emojis[f'{i}'] = i.count
+                emojis = {k: v for k, v in sorted(emojis.items(), key=lambda x: x[1], reverse=True)}
 
-            for i in emojis.values():
-                if emojis[key] == i:
-                    values.append(list(emojis.keys())[count])
-                count += 1
+                key = list(emojis.keys())[0]
 
-            if len(values) == 1:
-                await ctx.send(f'{key} has the highest reactions: {emojis[key]}')
+                values = []
+                count = 0
+
+                for i in emojis.values():
+                    if emojis[key] == i:
+                        values.append(list(emojis.keys())[count])
+                    count += 1
+
+                if len(values) == 1:
+                    await ctx.send(f'{key} has the highest reactions: {emojis[key]}')
+                else:
+                    await ctx.send(str(values) + " are tied")
+
+                reaction_count = sum([i.count for i in poll_msg.reactions])
+                await ctx.send("Total number of reactions: " + str(reaction_count - urg_count))
+
             else:
-                await ctx.send(str(values) + " are tied")
-
-            reaction_count = sum([i.count for i in poll_msg.reactions])
-            await ctx.send("Total number of reactions: " + str(reaction_count - urg_count))
-            
-        else:
-            await ctx.send("Please choose a valid poll")
+                await ctx.send("Please choose a valid poll")
     except FileNotFoundError:
         await ctx.send("Please create the poll first")
 
 
 @bot.command()
-async def reason(ctx, arg1, arg2):
+async def List(ctx):
+    with open("MessageID.txt") as file1:
+        lines = file1.readlines()
+        new_lines = [x[:-1] for x in lines]
+        await ctx.send('`\n`'.join(map(str, new_lines)))
 
+    file1.close()
+
+
+@bot.command()
+async def reason(ctx, arg1, arg2):
     if arg2 == "admin":
         role = "<@&675204055810834432>"
         statement = "Being an " + role + ", this is considered a serious crime!"
@@ -171,5 +209,4 @@ async def reason(ctx, arg1, arg2):
         await ctx.send("According to Rule: 1, adding members who do not belong here is crime! " + statement)
 
 
-
-bot.run('TOKEN')
+bot.run('NzcwODk1MjI5NDg1MTg3MDgz.X5kOIQ.CFttl7NlhhdzCu2kOkBlARjKoV0')
