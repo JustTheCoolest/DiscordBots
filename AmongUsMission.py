@@ -17,7 +17,7 @@ def Run(token):
         return
 
     @bot.command()
-    async def Au(ctx, arg):
+    async def Au(ctx, arg1, arg2):
 
         if ctx.guild.name == "Let's Rock!":
             channel_id = 768771698123210782
@@ -31,8 +31,7 @@ def Run(token):
 
         channel = bot.get_channel(channel_id)
         try:
-            Line = arg
-            Room_ID, Server = Line.split(":")
+            Room_ID, Server = arg1, arg2
             await ctx.send("{} invite created successfully".format(ctx.message.author.mention))
             await channel.send(Role_id + " Your friend has invited you for a game of Among Us! Join soon!")
             await channel.send("Room ID: " + Room_ID)
@@ -70,7 +69,7 @@ def Run(token):
             channel_id = 762633165080100914
             Role_id = "<@&762632022547628042>"
         else:
-            channel_id = 751460282118963201
+            channel_id = 770272936232878160
             Role_id = "<@&757163360541474818>"
 
         if arg == "call":
