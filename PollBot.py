@@ -1,6 +1,7 @@
 import discord
 import os
 import random
+import asyncio
 import string
 from discord.ext import commands
 
@@ -9,8 +10,12 @@ bot = commands.Bot(command_prefix=PREFIX)
 client = discord.Client()
 
 Options = []
+# Add_count = 0
 Msg = []
+
 Urgent_message = []
+
+# started = False
 
 
 @bot.event
@@ -20,11 +25,12 @@ async def on_ready():
     return
 
 
-'''
 @bot.command()
 async def cmd(ctx):
-    await ctx.send("HOW TO START A POLL:")
-'''
+    await ctx.send("HOW TO START A POLL:\nThere are 2 ways:\n1. Cool method:\n => Create the poll `poll.create <topic>`"
+                   "\n => Add options `poll.add <option>` [Note that you could add any number of options]\n"
+                   " => Start the poll `poll.start`\n2. Urgent method:\n => Create the poll directly `poll.urgent <Topic> & Options`"
+                   "[Note that there could me multiple options but should should be seperated using '&']")
 
 
 @bot.command()
@@ -34,27 +40,56 @@ async def hello(ctx):
 
 @bot.command()
 async def create(ctx, *args):
-    global poll
+    global poll, poll_ended, Add_count
+    Add_count = 0
     poll = "POLL: " + ' '.join(args)
     Options.clear()
+    poll_ended = False
     await ctx.send("Done")
 
 
 @bot.command()
 async def add(ctx, *args):
+    global Add_count
     arg = ' '.join(args)
-    Options.append(arg)
+    Add_count += 1
+    Options.append(str(Add_count) + ". " + arg)
     await ctx.send("Done")
+    if start.has_been_called:
+        print("Yes")
+        try:
+            await msg_sent.edit(content="\n".join(Options))
+            Reactions = int(len(Options))
+            count_react = 0
+            for j in range(Reactions):
+                await react_msg.add_reaction(Reaction_list[j])
+                count_react += 1
+        except NameError:
+            await urg_option_msg.edit(content="\n".join(Options))
+            urg_reaction = int(len(Options))
+            count_react = 0
+            for j in range(urg_reaction):
+                await urg_msg.add_reaction(Reaction_list[j])
+                count_react += 1
+
+
+@bot.command()
+async def edit(ctx):
+    message_sent = await ctx.send("This message is gonna get edited into 'test'")
+    await asyncio.sleep(1)
+    await message_sent.edit(content="Test")
 
 
 @bot.command()
 async def start(ctx):
-    global msg_sent, call_msg, react_msg, Reaction_list
+    global Started, msg_sent, call_msg, react_msg, Reaction_list, count
+    Started = True
+    start.has_been_called = True
     Reactions = 0
     Reaction_list = ["1️⃣", "2️⃣", "3️⃣", "4️⃣", "5️⃣", "6️⃣", "7️⃣", "8️⃣", "9️⃣", "🔟"]
 
     if os.path.exists("MessageID.txt"):
-        msg_file = open("MessageID.txt", "w")
+        msg_file = open("MessageID.txt", "a")
     else:
         msg_file = open("MessageID.txt", "w+")
 
@@ -71,20 +106,34 @@ async def start(ctx):
     PollChannel = bot.get_channel(channel_id)
     try:
         call_msg = await PollChannel.send(Role_id + " " + poll)
+
+        '''
         for i in range(int(len(Options))):
             Reactions += 1
             msg_sent = await PollChannel.send(str(i + 1) + ". " + Options[i])
             Msg.append(msg_sent)
+        '''
+        Reactions = int(len(Options))
+        msg_sent = await ctx.send("\n".join(Options))
 
         react_msg = await PollChannel.send("React to the message according to the number to cast your poll")
 
+        count = 0
         for j in range(Reactions):
             await react_msg.add_reaction(Reaction_list[j])
+            count += 1
 
-        msg_file.write(str(react_msg.id))
+        y = ''
+        for i in range(1, 3):
+            x = random.choice(string.ascii_letters)
+            y += x
+
+        msg_file.write(y + " : " + str(react_msg.id) + "\n")
 
     except NameError:
         await ctx.send("Please create the poll first")
+
+start.has_been_called = False
 
 
 @bot.command()
@@ -100,10 +149,13 @@ async def urgent(ctx, *args):
     urg_poll, *urg_options = Line.split("&")
     urg_call_msg = await ctx.send("Urgent poll: " + str(urg_poll))
 
+    '''
     for i in range(len(urg_options)):
         urg_reactions += 1
         urg_option_msg = await ctx.send("Urgent Option " + str(i + 1) + ": " + str(urg_options[i]))
         Urgent_message.append(urg_option_msg)
+    '''
+    urg_option_msg = await ctx.send("Urgent Options: \n" + "\n".join(urg_options))
 
     urg_msg = await ctx.send(
         "Please react to the message to according to the option number to cast your poll. (Its urgent it seems)")
@@ -113,7 +165,8 @@ async def urgent(ctx, *args):
         x = random.choice(string.ascii_letters)
         y += x
 
-    msg_file.write(y + ":" + str(urg_msg.id) + "\n")
+    urg_reactions = int(len(Options))
+    msg_file.write(y + " : " + str(urg_msg.id) + "\n")
 
     urg_count = 0
     for j in range(urg_reactions):
@@ -145,7 +198,7 @@ async def result(ctx, arg):
         d = {}
         with open('MessageID.txt') as poll_file:
             for line in poll_file:
-                (key, value) = line.rstrip("\n").split(":")
+                (key, value) = line.rstrip("\n").split(" : ")
                 d[key] = value
 
             print(d.keys())
@@ -175,7 +228,10 @@ async def result(ctx, arg):
                     await ctx.send(str(values) + " are tied")
 
                 reaction_count = sum([i.count for i in poll_msg.reactions])
-                await ctx.send("Total number of reactions: " + str(reaction_count - urg_count))
+                try:
+                    await ctx.send("Total number of reactions: " + str(reaction_count - urg_count))
+                except NameError:
+                    await ctx.send("Total number of reactions: " + str(reaction_count - count))
 
             else:
                 await ctx.send("Please choose a valid poll")
@@ -209,4 +265,4 @@ async def reason(ctx, arg1, arg2):
         await ctx.send("According to Rule: 1, adding members who do not belong here is crime! " + statement)
 
 
-bot.run('TOKEN')
+bot.run('NzcwODk1MjI5NDg1MTg3MDgz.X5kOIQ.Ds-acshGbeubIhCzcXryGkRDsKg')
