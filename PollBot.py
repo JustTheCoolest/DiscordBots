@@ -1,4 +1,5 @@
 import discord
+from discord import Embed
 import os
 import random
 import asyncio
@@ -15,6 +16,7 @@ Msg = []
 
 Urgent_message = []
 
+
 # started = False
 
 
@@ -22,6 +24,7 @@ Urgent_message = []
 async def on_ready():
     activity = discord.Game(name="Make a Poll", type=3)
     await bot.change_presence(status=discord.Status.idle, activity=activity)
+    print("Bot started")
     return
 
 
@@ -29,8 +32,9 @@ async def on_ready():
 async def cmd(ctx):
     await ctx.send("HOW TO START A POLL:\nThere are 2 ways:\n1. Cool method:\n => Create the poll `poll.create <topic>`"
                    "\n => Add options `poll.add <option>` [Note that you could add any number of options]\n"
-                   " => Start the poll `poll.start`\n2. Urgent method:\n => Create the poll directly `poll.urgent <Topic> & Options`"
-                   "[Note that there could me multiple options but should should be seperated using '&']")
+                   "=> Start the poll `poll.start`\n2. Urgent method:\n => Create the poll directly `poll.urgent "
+                   "<Topic> & Options` "
+                   "[Note that there could me multiple options but should should be separated using '&']")
 
 
 @bot.command()
@@ -40,12 +44,21 @@ async def hello(ctx):
 
 @bot.command()
 async def create(ctx, *args):
-    global poll, poll_ended, Add_count
+    global poll, poll_ended, Add_count, poll_create_id
     Add_count = 0
     poll = "POLL: " + ' '.join(args)
     Options.clear()
     poll_ended = False
-    await ctx.send("Done")
+    y = ''
+    for i in range(1, 3):
+        x = random.choice(string.ascii_letters)
+        y += x
+
+    poll_create_id = y
+
+    create_msg = "Poll created successfully!" + "\n" + "Poll ID: " + str(poll_create_id)
+    embed = discord.Embed(title="Poll List", description=create_msg, color=0xF48D1)
+    await ctx.send(embed=embed)
 
 
 @bot.command()
@@ -58,7 +71,8 @@ async def add(ctx, *args):
     if start.has_been_called:
         print("Yes")
         try:
-            await msg_sent.edit(content="\n".join(Options))
+            new_embed = Embed(title='POLL', description=call_msg + "\n" + "\n".join(Options) + "\n" + reaction_to_send, color=0xF48D1)
+            await react_msg.edit(embed=new_embed)
             Reactions = int(len(Options))
             count_react = 0
             for j in range(Reactions):
@@ -81,8 +95,8 @@ async def edit(ctx):
 
 
 @bot.command()
-async def start(ctx):
-    global Started, msg_sent, call_msg, react_msg, Reaction_list, count
+async def start(ctx, arg):
+    global Started, msg_sent, call_msg, react_msg, Reaction_list, count, total, options_to_send, reaction_to_send
     Started = True
     start.has_been_called = True
     Reactions = 0
@@ -104,34 +118,49 @@ async def start(ctx):
         Role_id = "<@&742311683585867869>"
 
     PollChannel = bot.get_channel(channel_id)
-    try:
-        call_msg = await PollChannel.send(Role_id + " " + poll)
+    with open('MessageID.txt') as file2:
+        o = {}
+        for line in file2:
+            (key, value) = line.rstrip("\n").split(" : ")
+            o[key] = value
 
-        '''
-        for i in range(int(len(Options))):
-            Reactions += 1
-            msg_sent = await PollChannel.send(str(i + 1) + ". " + Options[i])
-            Msg.append(msg_sent)
-        '''
-        Reactions = int(len(Options))
-        msg_sent = await ctx.send("\n".join(Options))
+        if str(arg) in o.keys():
+            print("Yup, it is there")
+            await ctx.send("Yo, the poll has already started before")
+        else:
+            print("Nope, not here")
+            try:
+                call_msg = Role_id + " " + poll
+                # embed = discord.Embed(title="Poll List", description=call_msg, color=0xF48D1)
+                # await ctx.send(embed=embed)
 
-        react_msg = await PollChannel.send("React to the message according to the number to cast your poll")
+                '''
+                for i in range(int(len(Options))):
+                    Reactions += 1
+                    msg_sent = await PollChannel.send(str(i + 1) + ". " + Options[i])
+                    Msg.append(msg_sent)
+                '''
+                Reactions = int(len(Options))
+                options_to_send = "\n".join(Options)
 
-        count = 0
-        for j in range(Reactions):
-            await react_msg.add_reaction(Reaction_list[j])
-            count += 1
+                # embed = discord.Embed(title="Poll List", description=options_to_send, color=0xF48D1)
+                # msg_sent = await ctx.send(embed=embed)
 
-        y = ''
-        for i in range(1, 3):
-            x = random.choice(string.ascii_letters)
-            y += x
+                reaction_to_send = "React to the message according to the number to cast your poll"
+                total = call_msg + "\n" + options_to_send + "''\n" + reaction_to_send
+                embed = discord.Embed(title="Poll List", description=total, color=0xF48D1)
+                react_msg = await ctx.send(embed=embed)
 
-        msg_file.write(y + " : " + str(react_msg.id) + "\n")
+                count = 0
+                for j in range(Reactions):
+                    await react_msg.add_reaction(Reaction_list[j])
+                    count += 1
 
-    except NameError:
-        await ctx.send("Please create the poll first")
+                msg_file.write(poll_create_id + " : " + str(react_msg.id) + "\n")
+
+            except NameError:
+                await ctx.send("Please create the poll first")
+
 
 start.has_been_called = False
 
@@ -144,18 +173,19 @@ async def urgent(ctx, *args):
     else:
         msg_file = open("MessageID.txt", "w+")
     Line = ' '.join(args)
-    urg_reactions = 0
+
     urg_reaction_list = ["1️⃣", "2️⃣", "3️⃣", "4️⃣", "5️⃣", "6️⃣", "7️⃣", "8️⃣", "9️⃣", "🔟"]
     urg_poll, *urg_options = Line.split("&")
     urg_call_msg = await ctx.send("Urgent poll: " + str(urg_poll))
 
-    '''
+    List1 = []
+    urg_reactions = len(urg_options)
+
     for i in range(len(urg_options)):
         urg_reactions += 1
-        urg_option_msg = await ctx.send("Urgent Option " + str(i + 1) + ": " + str(urg_options[i]))
-        Urgent_message.append(urg_option_msg)
-    '''
-    urg_option_msg = await ctx.send("Urgent Options: \n" + "\n".join(urg_options))
+        List1.append(str(i + 1) + ". " + str(urg_options[i]))
+
+    urg_option_msg = await ctx.send("Urgent Options: \n" + "\n".join(List1))
 
     urg_msg = await ctx.send(
         "Please react to the message to according to the option number to cast your poll. (Its urgent it seems)")
@@ -211,8 +241,8 @@ async def result(ctx, arg):
                 for i in poll_msg.reactions:
                     emojis[f'{i}'] = i.count
                 emojis = {k: v for k, v in sorted(emojis.items(), key=lambda x: x[1], reverse=True)}
-
                 key = list(emojis.keys())[0]
+                # await ctx.send(f'{key} has the highest reactions: {emojis[key]}')
 
                 values = []
                 count = 0
@@ -225,7 +255,7 @@ async def result(ctx, arg):
                 if len(values) == 1:
                     await ctx.send(f'{key} has the highest reactions: {emojis[key]}')
                 else:
-                    await ctx.send(str(values) + " are tied")
+                    await ctx.send(str(str(values).split('[]')) + " are tied")
 
                 reaction_count = sum([i.count for i in poll_msg.reactions])
                 try:
@@ -240,29 +270,15 @@ async def result(ctx, arg):
 
 
 @bot.command()
-async def List(ctx):
+async def list(ctx):
     with open("MessageID.txt") as file1:
         lines = file1.readlines()
         new_lines = [x[:-1] for x in lines]
-        await ctx.send('`\n`'.join(map(str, new_lines)))
+        list_poll = '\n'.join(map(str, new_lines))
+        embed = discord.Embed(title="Poll List", description=list_poll, color=0xF48D1)
+        await ctx.send(embed=embed)
 
     file1.close()
 
 
-@bot.command()
-async def reason(ctx, arg1, arg2):
-    if arg2 == "admin":
-        role = "<@&675204055810834432>"
-        statement = "Being an " + role + ", this is considered a serious crime!"
-    if arg2 == "helping-hand":
-        role = "<@&675214370346893353>"
-        statement = "Being a " + role + ", its a shame on you!"
-    if arg2 == "channel-head":
-        role = "<@&749856631390732379>"
-        statement = "Being a " + role + ", a wrong example is being set to others!"
-
-    if arg1 == "diffmem":
-        await ctx.send("According to Rule: 1, adding members who do not belong here is crime! " + statement)
-
-
-bot.run('NzcwODk1MjI5NDg1MTg3MDgz.X5kOIQ.Ds-acshGbeubIhCzcXryGkRDsKg')
+bot.run('NzcwODk1MjI5NDg1MTg3MDgz.X5kOIQ.f51sT-OHDRKbHybHEPXDtKZ6-CU')
