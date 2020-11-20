@@ -71,7 +71,8 @@ async def add(ctx, *args):
     if start.has_been_called:
         print("Yes")
         try:
-            new_embed = Embed(title='POLL', description=call_msg + "\n" + "\n".join(Options) + "\n" + reaction_to_send, color=0xF48D1)
+            new_embed = Embed(title='POLL', description=call_msg + "\n" + "\n".join(Options) + "\n" + reaction_to_send,
+                              color=0xF48D1)
             await react_msg.edit(embed=new_embed)
             Reactions = int(len(Options))
             count_react = 0
@@ -172,11 +173,17 @@ async def urgent(ctx, *args):
         msg_file = open("MessageID.txt", "a")
     else:
         msg_file = open("MessageID.txt", "w+")
+
     Line = ' '.join(args)
+
+    y = ''
+    for i in range(1, 3):
+        x = random.choice(string.ascii_letters)
+        y += x
 
     urg_reaction_list = ["1️⃣", "2️⃣", "3️⃣", "4️⃣", "5️⃣", "6️⃣", "7️⃣", "8️⃣", "9️⃣", "🔟"]
     urg_poll, *urg_options = Line.split("&")
-    urg_call_msg = await ctx.send("Urgent poll: " + str(urg_poll))
+    urg_call_msg = "Urgent poll: " + str(urg_poll) + "\n" + "Poll ID: " + str(y)
 
     List1 = []
     urg_reactions = len(urg_options)
@@ -185,17 +192,15 @@ async def urgent(ctx, *args):
         urg_reactions += 1
         List1.append(str(i + 1) + ". " + str(urg_options[i]))
 
-    urg_option_msg = await ctx.send("Urgent Options: \n" + "\n".join(List1))
+    urg_option_msg = "\n".join(List1)
 
-    urg_msg = await ctx.send(
-        "Please react to the message to according to the option number to cast your poll. (Its urgent it seems)")
+    urg_msg_send = "Please react to the message to according to the option number to cast your poll. (Its urgent it seems)"
 
-    y = ''
-    for i in range(1, 3):
-        x = random.choice(string.ascii_letters)
-        y += x
+    urg_total = urg_option_msg + "''\n" + urg_msg_send
+    embed = discord.Embed(title=urg_call_msg, description=urg_total, color=0xF48D1)
+    urg_msg = await ctx.send(embed=embed)
 
-    urg_reactions = int(len(Options))
+    urg_reactions = int(len(urg_options))
     msg_file.write(y + " : " + str(urg_msg.id) + "\n")
 
     urg_count = 0
@@ -242,7 +247,6 @@ async def result(ctx, arg):
                     emojis[f'{i}'] = i.count
                 emojis = {k: v for k, v in sorted(emojis.items(), key=lambda x: x[1], reverse=True)}
                 key = list(emojis.keys())[0]
-                # await ctx.send(f'{key} has the highest reactions: {emojis[key]}')
 
                 values = []
                 count = 0
@@ -255,7 +259,7 @@ async def result(ctx, arg):
                 if len(values) == 1:
                     await ctx.send(f'{key} has the highest reactions: {emojis[key]}')
                 else:
-                    await ctx.send(str(str(values).split('[]')) + " are tied")
+                    await ctx.send("{} These 2 values are tied".format(values))
 
                 reaction_count = sum([i.count for i in poll_msg.reactions])
                 try:
@@ -270,7 +274,7 @@ async def result(ctx, arg):
 
 
 @bot.command()
-async def list(ctx):
+async def List(ctx):
     with open("MessageID.txt") as file1:
         lines = file1.readlines()
         new_lines = [x[:-1] for x in lines]
@@ -281,4 +285,4 @@ async def list(ctx):
     file1.close()
 
 
-bot.run('NzcwODk1MjI5NDg1MTg3MDgz.X5kOIQ.f51sT-OHDRKbHybHEPXDtKZ6-CU')
+bot.run("TOKEN")
