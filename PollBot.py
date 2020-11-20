@@ -281,6 +281,7 @@ async def List(ctx):
         list_poll = '\n'.join(map(str, new_lines))
         embed = discord.Embed(title="Poll List", description=list_poll, color=0xF48D1)
         await ctx.send(embed=embed)
+        print("Yes")
 
     file1.close()
 
